@@ -884,10 +884,10 @@
 
   <script>
     // ==========================================
-    // 1. CONFIGURACIÓN
+    // 1. CONFIGURACIÓN - CREDENCIALES INCLUIDAS
     // ==========================================
-    var SUPABASE_URL = 'TU_SUPABASE_URL'; // Reemplazar con tu URL
-    var SUPABASE_KEY = 'TU_SUPABASE_ANON_KEY'; // Reemplazar con tu clave anónima
+    var SUPABASE_URL = 'https://aeqtbqcdylemvacvnpst.supabase.co';
+    var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlcXRicWNkeWxlbXZhY3ZucHN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NjA4NDQsImV4cCI6MjA3ODUzNjg0NH0.7M3VpZ6J4tcZIXgoUzJUwHjlGiGYwyRlJbK0-GKqEiE';
 
     // ==========================================
     // 2. VARIABLES GLOBALES
@@ -943,21 +943,18 @@
     }
 
     function switchTab(tabName) {
-      // Cambiar tabs activos
       var tabs = document.querySelectorAll('.tab');
       tabs.forEach(function(tab) {
         tab.classList.remove('active');
       });
       event.target.classList.add('active');
 
-      // Cambiar contenido
       var contents = document.querySelectorAll('.tab-content');
       contents.forEach(function(content) {
         content.classList.remove('active');
       });
       document.getElementById(tabName + 'Tab').classList.add('active');
 
-      // Cargar datos según tab
       if (tabName === 'overview') {
         loadOverview();
       } else if (tabName === 'players') {
@@ -1016,7 +1013,6 @@
       errorDiv.innerHTML = '';
 
       try {
-        // Crear equipo
         var teams = await supabaseRequest('teams', 'POST', {
           license_id: currentLicense.id,
           team_name: teamName,
@@ -1025,7 +1021,6 @@
 
         var team = teams[0];
 
-        // Crear usuario (entrenador)
         var passwordHash = btoa(coachPassword);
         var users = await supabaseRequest('users', 'POST', {
           team_id: team.id,
@@ -1037,7 +1032,6 @@
 
         var user = users[0];
 
-        // Actualizar licencia a activa
         await supabaseRequest('licenses?id=eq.' + currentLicense.id, 'PATCH', {
           status: 'active',
           activated_at: new Date().toISOString(),
@@ -1045,12 +1039,10 @@
           coach_email: coachEmail
         });
 
-        // Actualizar coach_id en equipo
         await supabaseRequest('teams?id=eq.' + team.id, 'PATCH', {
           coach_id: user.id
         });
 
-        // Guardar sesión
         currentUser = user;
         currentTeam = team;
         localStorage.setItem('matchstats_session', JSON.stringify({
@@ -1088,7 +1080,6 @@
         currentUser = users[0];
         currentTeam = users[0].teams;
 
-        // Guardar sesión
         localStorage.setItem('matchstats_session', JSON.stringify({
           user: currentUser,
           team: currentTeam,
@@ -1127,20 +1118,13 @@
 
     async function loadOverview() {
       try {
-        // Cargar jugadores
         allPlayers = await supabaseRequest('players?team_id=eq.' + currentTeam.id + '&select=*&order=jersey_number.asc', 'GET');
-        
-        // Cargar partidos jugados
         allMatches = await supabaseRequest('matches?team_id=eq.' + currentTeam.id + '&status=eq.played&select=*&order=matchday.asc', 'GET');
-        
-        // Cargar estadísticas
         allStats = await supabaseRequest('match_stats?select=*,players(*),matches(*)&matches.team_id=eq.' + currentTeam.id, 'GET');
 
-        // Actualizar stats
         document.getElementById('totalPlayers').textContent = allPlayers.length;
         document.getElementById('totalMatches').textContent = allMatches.length;
 
-        // Calcular goles y asistencias totales
         var totalGoals = 0;
         var totalAssists = 0;
         allStats.forEach(function(stat) {
@@ -1150,7 +1134,6 @@
         document.getElementById('totalGoals').textContent = totalGoals;
         document.getElementById('totalAssists').textContent = totalAssists;
 
-        // Top goleadores
         var scorersMap = {};
         allStats.forEach(function(stat) {
           if (!scorersMap[stat.player_id]) {
@@ -1175,7 +1158,6 @@
         scorersHTML += '</tbody></table>';
         document.getElementById('topScorers').innerHTML = scorers.length > 0 ? scorersHTML : '<div class="empty-state"><p>No hay goleadores todavía</p></div>';
 
-        // Top minutos
         var minutesMap = {};
         allStats.forEach(function(stat) {
           if (!minutesMap[stat.player_id]) {
@@ -1267,10 +1249,7 @@
       }
 
       try {
-        // Eliminar estadísticas del jugador
         await supabaseRequest('match_stats?player_id=eq.' + playerId, 'DELETE');
-        
-        // Eliminar jugador
         await supabaseRequest('players?id=eq.' + playerId, 'DELETE');
         
         alert('Jugador eliminado correctamente');
@@ -1288,13 +1267,11 @@
       var playerNumber = parseInt(document.getElementById('playerNumber').value);
       var playerPosition = document.getElementById('playerPosition').value;
 
-      // Validar máximo 30 jugadores
       if (!playerId && allPlayers.length >= 30) {
         alert('Has alcanzado el máximo de 30 jugadores por equipo');
         return;
       }
 
-      // Validar número único
       var existingNumber = allPlayers.find(function(p) {
         return p.jersey_number === playerNumber && p.id !== playerId;
       });
@@ -1305,7 +1282,6 @@
 
       try {
         if (playerId) {
-          // Editar
           await supabaseRequest('players?id=eq.' + playerId, 'PATCH', {
             full_name: playerName,
             jersey_number: playerNumber,
@@ -1313,7 +1289,6 @@
           });
           alert('Jugador actualizado correctamente');
         } else {
-          // Crear
           await supabaseRequest('players', 'POST', {
             team_id: currentTeam.id,
             full_name: playerName,
@@ -1401,10 +1376,7 @@
       }
 
       try {
-        // Eliminar estadísticas del partido
         await supabaseRequest('match_stats?match_id=eq.' + matchId, 'DELETE');
-        
-        // Eliminar partido
         await supabaseRequest('matches?id=eq.' + matchId, 'DELETE');
         
         alert('Partido eliminado correctamente');
@@ -1427,7 +1399,6 @@
 
       try {
         if (matchId) {
-          // Editar
           await supabaseRequest('matches?id=eq.' + matchId, 'PATCH', {
             match_date: matchDate,
             matchday: matchday,
@@ -1439,7 +1410,6 @@
           });
           alert('Partido actualizado correctamente');
         } else {
-          // Crear
           await supabaseRequest('matches', 'POST', {
             team_id: currentTeam.id,
             match_date: matchDate,
@@ -1491,10 +1461,7 @@
       }
 
       try {
-        // Cargar jugadores
         allPlayers = await supabaseRequest('players?team_id=eq.' + currentTeam.id + '&select=*&order=jersey_number.asc', 'GET');
-        
-        // Cargar estadísticas existentes
         var existingStats = await supabaseRequest('match_stats?match_id=eq.' + matchId + '&select=*', 'GET');
 
         var html = '<h4 style="color: #ec4899; margin: 20px 0;">Estadísticas de Jugadores</h4>';
@@ -1539,10 +1506,8 @@
 
     async function saveMatchStats(matchId) {
       try {
-        // Eliminar estadísticas existentes
         await supabaseRequest('match_stats?match_id=eq.' + matchId, 'DELETE');
 
-        // Guardar nuevas estadísticas
         var statsToSave = [];
 
         allPlayers.forEach(function(player) {
@@ -1589,10 +1554,8 @@
         var player = allPlayers.find(function(p) { return p.id === playerId; });
         if (!player) return;
 
-        // Cargar estadísticas del jugador
         var playerStats = await supabaseRequest('match_stats?player_id=eq.' + playerId + '&select=*,matches(*)&order=matches(matchday).asc', 'GET');
 
-        // Calcular totales
         var totalMatches = playerStats.filter(function(s) { return s.is_called; }).length;
         var starterMatches = playerStats.filter(function(s) { return s.is_starter; }).length;
         var totalMinutes = 0;
@@ -1609,13 +1572,11 @@
           totalRed += stat.red_cards || 0;
         });
 
-        // Calcular porcentajes
         var playedMatches = await supabaseRequest('matches?team_id=eq.' + currentTeam.id + '&status=eq.played&select=*', 'GET');
         var totalPossibleMinutes = playedMatches.length * 90;
         var minutesPercentage = totalPossibleMinutes > 0 ? ((totalMinutes / totalPossibleMinutes) * 100).toFixed(1) : 0;
         var starterPercentage = totalMatches > 0 ? ((starterMatches / totalMatches) * 100).toFixed(1) : 0;
 
-        // Crear HTML del perfil
         var html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">';
         html += '<div class="stat-box"><div class="stat-value">' + totalMatches + '</div><div class="stat-label">Convocatorias</div></div>';
         html += '<div class="stat-box"><div class="stat-value">' + minutesPercentage + '%</div><div class="stat-label">% Minutos Jugados</div></div>';
@@ -1685,7 +1646,6 @@
 
     async function generateComparison() {
       try {
-        // Obtener jugadores seleccionados
         var selectedPlayers = [];
         allPlayers.forEach(function(player) {
           var checkbox = document.getElementById('compare_' + player.id);
@@ -1699,7 +1659,6 @@
           return;
         }
 
-        // Cargar estadísticas de cada jugador
         var comparisonData = [];
 
         for (var i = 0; i < selectedPlayers.length; i++) {
@@ -1741,7 +1700,6 @@
           });
         }
 
-        // Generar HTML de comparación
         var html = '<div class="compare-container">';
         
         comparisonData.forEach(function(data) {
@@ -1772,7 +1730,6 @@
     // 15. INICIALIZACIÓN
     // ==========================================
     window.onload = function() {
-      // Verificar si hay sesión guardada
       var session = localStorage.getItem('matchstats_session');
       if (session) {
         try {
